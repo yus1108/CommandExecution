@@ -1,0 +1,41 @@
+﻿#pragma once
+
+#define COMMAND_EXECUTION_VERSION "3.0.0"
+#define COMMAND_EXECUTION_LIB_NAME "CommandExecution_" COMMAND_EXECUTION_VERSION ".lib"
+
+#if defined(EXPORT_COMMAND_EXECUTION)
+#define COMMAND_EXECUTION_API __declspec(dllexport)
+#else
+#define COMMAND_EXECUTION_API __declspec(dllimport)
+#endif
+
+typedef struct
+{
+	const char* DefaultValue;
+	void(*FuncPtr)(const char* _Value);
+} CEKeylessOption;
+
+typedef struct
+{
+	const char* Key;
+	const char* AliasKey;
+	const char* DefaultValue;
+	void(*FuncPtr)(const char* _Value);
+} CECommandOption;
+
+enum CEDefaultCommandOption
+{
+	CE_DEFAULT_COMMAND_OPTION_CODE_PAGE,
+	CE_DEFAULT_COMMAND_OPTION_LOCALE,
+};
+
+// _DefaultTarget WILL BE CALLED FIRST PRIOR TO _Options
+// THE ORDER MATTERS IN _Options (THIS FUNCTION WILL CALL CommandOption::FuncPtr IN ORDER OF DECLARATION in _Options)
+extern "C" COMMAND_EXECUTION_API void CE_HandleCommandArgs(const int _Argc, const char* const _Argv[], CEKeylessOption _DefaultTarget, CECommandOption* _Options, const size_t _OptionCount);
+
+extern "C" COMMAND_EXECUTION_API CECommandOption CEUtility_GetDefaultCommandOption(CEDefaultCommandOption _DefaultOption);
+
+extern "C" COMMAND_EXECUTION_API void CEUtility_SetConsoleOutputCP(const char* _Str);
+extern "C" COMMAND_EXECUTION_API void CEUtility_SetLocale(const char* _Str);
+
+
