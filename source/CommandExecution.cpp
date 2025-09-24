@@ -49,6 +49,7 @@ void CE_HandleCommandArgs(const int _Argc, const char* const _Argv[], CEKeylessO
 			case 3: __fallthrough;
 			case 2: __fallthrough;
 			case 1:
+				if ( isVisited ) { std::cout << " "; }
 				std::cout << std::string( _Argv[i] );
 				_DefaultTarget.FuncPtr( _Argv[i] );
 				isDefaultTargetVisited = true;
@@ -70,6 +71,7 @@ void CE_HandleCommandArgs(const int _Argc, const char* const _Argv[], CEKeylessO
 					}
 					if (hasEqual == false)
 					{
+						if ( isVisited ) { std::cout << " "; }
 						std::cout << std::string( _Argv[i] );
 						_DefaultTarget.FuncPtr( _Argv[i] );
 						isDefaultTargetVisited = true;
