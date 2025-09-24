@@ -4,10 +4,12 @@
 #define COMMAND_EXECUTION_VERSION_MINOR 1
 #define COMMAND_EXECUTION_VERSION_PATCH 3
 
-#if defined(EXPORT_COMMAND_EXECUTION)
+#if defined(EXPORT_COMMAND_EXECUTION_DLL)
 #define COMMAND_EXECUTION_API __declspec(dllexport)
-#else
+#elif defined(EXPORT_COMMAND_EXECUTION_DLL)
 #define COMMAND_EXECUTION_API __declspec(dllimport)
+#else
+#define COMMAND_EXECUTION_API
 #endif
 
 typedef struct

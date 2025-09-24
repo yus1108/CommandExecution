@@ -2,28 +2,24 @@
 #pragma warning(disable: 5045) // Qspectre is not supported
 
 #pragma warning(push)
-#pragma warning(disable: 4365)
 #pragma warning(disable: 4244)
 #pragma warning(disable: 4242)
+#pragma warning(disable: 4365)
+#pragma warning(disable: 4365)
+#pragma warning(disable: 4668)
+#pragma warning(disable: 5039)
 #include <algorithm>
-#pragma warning(pop)
 #include <cassert>
 #include <cctype>
-#include <malloc.h>
-#include <cstdarg>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <clocale>
 #include <iostream>
 #include <string>
 #include <unordered_map>
-#pragma warning(push)
-#pragma warning(disable: 5039)
-#pragma warning(disable: 4668)
 #include <Windows.h>
-#pragma warning(pop)
 #include <consoleapi2.h>
+#pragma warning(pop)
 
 #define EXPORT_COMMAND_EXECUTION
 
