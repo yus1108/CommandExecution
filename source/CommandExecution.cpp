@@ -89,7 +89,7 @@ void CE_HandleCommandArgs(const int _Argc, const char* const _Argv[], CEKeylessO
 				if (isStartWith)
 				{
 					std::cout << " --" << _Options[j].Key << "=" << std::string( _Argv[i] + keyPrefix.length() );
-					_Options[i].FuncPtr( _Argv[i] + keyPrefix.length() );
+					_Options[j].FuncPtr( _Argv[i] + keyPrefix.length() );
 					isArgumentVisited[&_Options[j]] = true;
 					isVisited = true;
 					break;
@@ -104,7 +104,7 @@ void CE_HandleCommandArgs(const int _Argc, const char* const _Argv[], CEKeylessO
 					if (isStartWith)
 					{
 						std::cout << " -" << _Options[j].AliasKey << "=" << std::string( _Argv[i] + loAliasKeyPrefix.length() );
-						_Options[i].FuncPtr( _Argv[i] + loAliasKeyPrefix.length() );
+						_Options[j].FuncPtr(_Argv[i] + loAliasKeyPrefix.length());
 						isArgumentVisited[&_Options[j]] = true;
 						isVisited = true;
 						break;
