@@ -34,9 +34,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 void CE_HandleCommandArgs(const int _Argc, const char* const _Argv[], CEKeylessOption _DefaultTarget, CECommandOption* _Options, const size_t _OptionCount)
 {
-	std::vector<std::string> defaultTargetValues;
-	std::unordered_map<CECommandOption*, std::string> argumentValues;
-	argumentValues.reserve(_OptionCount);
+	bool isDefaultTargetVisited = false;
+	bool isVisited = false;
+	std::unordered_map<CECommandOption*, bool> isArgumentVisited;
+	isArgumentVisited.reserve(_OptionCount);
 
 	if (_Argc > 1)
 	{
@@ -45,9 +46,13 @@ void CE_HandleCommandArgs(const int _Argc, const char* const _Argv[], CEKeylessO
 			int len = (int)strlen( _Argv[i] );
 			switch (len)
 			{
+			case 3: __fallthrough;
 			case 2: __fallthrough;
 			case 1:
-				defaultTargetValues.emplace_back(_Argv[i]);
+				std::cout << std::string( _Argv[i] );
+				_DefaultTarget.FuncPtr( _Argv[i] );
+				isDefaultTargetVisited = true;
+				isVisited = true;
 				continue;
 			default:
 				// 정규식: R("[^\-][^\-][^\-\=]*(?!\=)")과 일치하는 인자 찾으면 default target 입니다.
@@ -65,7 +70,10 @@ void CE_HandleCommandArgs(const int _Argc, const char* const _Argv[], CEKeylessO
 					}
 					if (hasEqual == false)
 					{
-						defaultTargetValues.emplace_back(_Argv[i]);
+						std::cout << std::string( _Argv[i] );
+						_DefaultTarget.FuncPtr( _Argv[i] );
+						isDefaultTargetVisited = true;
+						isVisited = true;
 						continue;
 					}
 				}
@@ -78,7 +86,10 @@ void CE_HandleCommandArgs(const int _Argc, const char* const _Argv[], CEKeylessO
 				bool isStartWith = keyPrefix.compare(0, keyPrefix.length(), _Argv[i], 0, keyPrefix.length()) == 0;
 				if (isStartWith)
 				{
-					argumentValues[&_Options[j]] = _Argv[i] + keyPrefix.length();
+					std::cout << " --" << _Options[j].Key << "=" << std::string( _Argv[i] + keyPrefix.length() );
+					_Options[i].FuncPtr( _Argv[i] + keyPrefix.length() );
+					isArgumentVisited[&_Options[j]] = true;
+					isVisited = true;
 					break;
 				}
 				else
@@ -90,8 +101,10 @@ void CE_HandleCommandArgs(const int _Argc, const char* const _Argv[], CEKeylessO
 					isStartWith = loAliasKeyPrefix.compare(0, loAliasKeyPrefix.length(), loArg, 0, loAliasKeyPrefix.length()) == 0;
 					if (isStartWith)
 					{
-						assert(argumentValues.find(&_Options[j]) == argumentValues.end()); // 중복된 옵션이 들어왔습니다.
-						argumentValues[_Options + j] = _Argv[i] + loAliasKeyPrefix.length();
+						std::cout << " -" << _Options[j].AliasKey << "=" << std::string( _Argv[i] + loAliasKeyPrefix.length() );
+						_Options[i].FuncPtr( _Argv[i] + loAliasKeyPrefix.length() );
+						isArgumentVisited[&_Options[j]] = true;
+						isVisited = true;
 						break;
 					}
 				}
@@ -99,27 +112,23 @@ void CE_HandleCommandArgs(const int _Argc, const char* const _Argv[], CEKeylessO
 		}
 	}
 
-	if (defaultTargetValues.empty())
+	if ( isDefaultTargetVisited == false )
 	{
-		std::string defaultTargetValue = _DefaultTarget.DefaultValue == nullptr ? "" : std::string(_DefaultTarget.DefaultValue);
-		if ( _DefaultTarget.FuncPtr != nullptr ) { _DefaultTarget.FuncPtr(defaultTargetValue.c_str()); }
-	}
-	else
-	{
-		for (std::string& defaultTargetValue : defaultTargetValues)
+		_DefaultTarget.FuncPtr( _DefaultTarget.DefaultValue );
+		if ( isVisited )
 		{
-			std::cout << defaultTargetValue;
-			if ( _DefaultTarget.FuncPtr != nullptr ) { _DefaultTarget.FuncPtr( defaultTargetValue.c_str() ); }
+			std::cout << " ";
 		}
+		std::cout << std::string( _DefaultTarget.DefaultValue );
 	}
 
 	for (size_t i = 0; i < _OptionCount; ++i)
 	{
-		std::string val;
-		if (argumentValues.find(_Options + i) != argumentValues.end()) { val = argumentValues[_Options + i]; }
-		else { val = (_Options[i].DefaultValue == nullptr) ? "" : _Options[i].DefaultValue; }
-		std::cout << " --" << _Options[i].Key << "(" << _Options[i].AliasKey << ")=" << val;
-		if (_Options[i].FuncPtr != nullptr) { _Options[i].FuncPtr(val.c_str()); }
+		if ( isArgumentVisited[&_Options[i]] == false )
+		{
+			std::cout << " --" << _Options[i].Key << "(" << _Options[i].AliasKey << ")=" << std::string(_Options[i].DefaultValue);
+			_Options[i].FuncPtr( _Options[i].DefaultValue );
+		}
 	}
 	printf("\n");
 }
