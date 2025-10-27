@@ -28,11 +28,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 //                               CommandExecution                            //
 ///////////////////////////////////////////////////////////////////////////////
-void CE_HandleCommandArgs(const int _Argc, const char* const _Argv[], CEKeylessOption _DefaultTarget, CECommandOption* _Options, const size_t _OptionCount)
+void CE_HandleCommandArgsA(const int _Argc, const char* const _Argv[], CEKeylessOptionA _DefaultTarget, CECommandOptionA* _Options, const size_t _OptionCount)
 {
 	bool isDefaultTargetVisited = false;
 	bool isVisited = false;
-	std::unordered_map<CECommandOption*, bool> isArgumentVisited;
+	std::unordered_map<CECommandOptionA*, bool> isArgumentVisited;
 	isArgumentVisited.reserve(_OptionCount);
 
 	if (_Argc > 1)
@@ -128,30 +128,222 @@ void CE_HandleCommandArgs(const int _Argc, const char* const _Argv[], CEKeylessO
 			_Options[i].FuncPtr( _Options[i].DefaultValue );
 		}
 	}
-	printf("\n");
+	std::cout << std::endl;
 }
 
-CECommandOption CEUtility_GetDefaultCommandOption(CEDefaultCommandOption _DefaultOption)
+COMMAND_EXECUTION_API void CE_HandleCommandArgsW(const int _Argc, const wchar_t* const _Argv[], CEKeylessOptionW _DefaultTarget, CECommandOptionW* _Options, const size_t _OptionCount)
 {
-	switch (_DefaultOption)
+	bool isDefaultTargetVisited = false;
+	bool isVisited = false;
+	std::unordered_map<CECommandOptionW*, bool> isArgumentVisited;
+	isArgumentVisited.reserve(_OptionCount);
+
+	if (_Argc > 1)
 	{
-	case CE_DEFAULT_COMMAND_OPTION_CODE_PAGE:
-		return { "CodePage", "cp", "65001", CEUtility_SetConsoleOutputCP };
-	case CE_DEFAULT_COMMAND_OPTION_LOCALE:
-		return { "Locale", "l", ".utf8", CEUtility_SetLocale };
+		for (int i = 1; i < _Argc; ++i)
+		{
+			int len = static_cast<int>(wcslen(_Argv[i]));
+			switch (len)
+			{
+			case 3: __fallthrough;
+			case 2: __fallthrough;
+			case 1:
+				if (isVisited) { std::cout << " "; }
+				std::wcout << std::wstring(_Argv[i]);
+				_DefaultTarget.FuncPtr(_Argv[i]);
+				isDefaultTargetVisited = true;
+				isVisited = true;
+				continue;
+			default:
+				// 정규식: R("[^\-][^\-][^\-\=]*(?!\=)")과 일치하는 인자 찾으면 default target 입니다.
+				if (_Argv[i][0] != '-' && _Argv[i][1] != '-')
+				{
+					assert(_Argv[i][2] != L'='); // '='가 3번째 글자에 온다면 이상한 값("--=")입니다.
+					bool hasEqual = false;
+					for (int j = 2; j < len; ++j)
+					{
+						if (_Argv[i][j] == L'=')
+						{
+							hasEqual = true;
+							break;
+						}
+					}
+					if (hasEqual == false)
+					{
+						if (isVisited) { std::cout << " "; }
+						std::wcout << std::wstring(_Argv[i]);
+						_DefaultTarget.FuncPtr(_Argv[i]);
+						isDefaultTargetVisited = true;
+						isVisited = true;
+						continue;
+					}
+				}
+				break;
+			}
+
+			for (size_t j = 0; j < _OptionCount; ++j)
+			{
+				std::wstring keyPrefix = std::wstring(L"--") + _Options[j].Key + L"=";
+				bool isStartWith = keyPrefix.compare(0, keyPrefix.length(), _Argv[i], 0, keyPrefix.length()) == 0;
+				if (isStartWith)
+				{
+					std::wcout << L" --" << _Options[j].Key << L"=" << std::wstring(_Argv[i] + keyPrefix.length());
+					_Options[j].FuncPtr(_Argv[i] + keyPrefix.length());
+					isArgumentVisited[&_Options[j]] = true;
+					isVisited = true;
+					break;
+				}
+				else
+				{
+					std::wstring loArg = _Argv[i];
+					std::transform(loArg.begin(), loArg.end(), loArg.begin(), [](unsigned char c) { return std::tolower(c); });
+					std::wstring loAliasKeyPrefix = std::wstring(L"-") + _Options[j].AliasKey + L"=";
+					std::transform(loAliasKeyPrefix.begin(), loAliasKeyPrefix.end(), loAliasKeyPrefix.begin(), [](unsigned char c) { return std::tolower(c); });
+					isStartWith = loAliasKeyPrefix.compare(0, loAliasKeyPrefix.length(), loArg, 0, loAliasKeyPrefix.length()) == 0;
+					if (isStartWith)
+					{
+						std::wcout << L" -" << _Options[j].AliasKey << L"=" << std::wstring(_Argv[i] + loAliasKeyPrefix.length());
+						_Options[j].FuncPtr(_Argv[i] + loAliasKeyPrefix.length());
+						isArgumentVisited[&_Options[j]] = true;
+						isVisited = true;
+						break;
+					}
+				}
+			}
+		}
 	}
 
-	assert(false); // MUST NOT REACH HERE!!!
-	return { 0 };
+	if (isDefaultTargetVisited == false)
+	{
+		_DefaultTarget.FuncPtr(_DefaultTarget.DefaultValue);
+		if (isVisited)
+		{
+			std::cout << " ";
+		}
+		std::wcout << std::wstring(_DefaultTarget.DefaultValue);
+	}
+
+	for (size_t i = 0; i < _OptionCount; ++i)
+	{
+		if (isArgumentVisited[&_Options[i]] == false)
+		{
+			std::wcout << L" --" << _Options[i].Key << L"(" << _Options[i].AliasKey << L")=" << std::wstring(_Options[i].DefaultValue);
+			_Options[i].FuncPtr(_Options[i].DefaultValue);
+		}
+	}
+	std::wcout << std::endl;
 }
 
-
-void CEUtility_SetConsoleOutputCP(const char* _Str)
+#include <sstream>
+static std::vector<std::wstring> SplitByWhitespace(const std::wstring& s)
 {
-	SetConsoleOutputCP(std::stoul(_Str));
+	std::wstringstream wss(s);
+	std::vector<std::wstring> out;
+#pragma warning(suppress : 26800) // C26800: Use of 'std::basic_istream<...>::operator>>' may be unsafe: this function does not perform bounds checking.
+	for (std::wstring token; wss >> token;) { out.push_back(std::move(token)); } // 연속 공백은 무시됨
+	return out;
 }
 
-void CEUtility_SetLocale(const char* _Str)
+COMMAND_EXECUTION_API void CE_HandleWinAPICmdLine(const wchar_t* _CommandLine, CEKeylessOptionW _DefaultTarget, CECommandOptionW* _Options, const size_t _OptionCount)
 {
-	setlocale(LC_ALL, _Str);
+	// lpCmdLine이 비어있으면 함수 종료
+	if (_CommandLine == nullptr || lstrcmpW(_CommandLine, L"") == 0) { return; }
+
+	bool isDefaultTargetVisited = false;
+	bool isVisited = false;
+	std::unordered_map<CECommandOptionW*, bool> isArgumentVisited;
+	isArgumentVisited.reserve(_OptionCount);
+
+	std::vector<std::wstring> args = SplitByWhitespace(std::wstring(_CommandLine));
+	for (auto arg : args)
+	{
+		size_t len = arg.size();
+		switch (len)
+		{
+		case 3: __fallthrough;
+		case 2: __fallthrough;
+		case 1:
+			if (isVisited) { std::cout << " "; }
+			std::wcout << arg;
+			_DefaultTarget.FuncPtr(arg.data());
+			isDefaultTargetVisited = true;
+			isVisited = true;
+			continue;
+		default:
+			// 정규식: R("[^\-][^\-][^\-\=]*(?!\=)")과 일치하는 인자 찾으면 default target 입니다.
+			if (arg[0] != '-' && arg[1] != '-')
+			{
+				assert(arg[2] != L'='); // '='가 3번째 글자에 온다면 이상한 값("--=")입니다.
+				bool hasEqual = false;
+				for (size_t i = 2; i < len; ++i)
+				{
+					if (arg[i] == L'=')
+					{
+						hasEqual = true;
+						break;
+					}
+				}
+				if (hasEqual == false)
+				{
+					if (isVisited) { std::cout << " "; }
+					std::wcout << arg;
+					_DefaultTarget.FuncPtr(arg.data());
+					isDefaultTargetVisited = true;
+					isVisited = true;
+					continue;
+				}
+			}
+			break;
+		}
+
+		for (size_t i = 0; i < _OptionCount; ++i)
+		{
+			std::wstring keyPrefix = std::wstring(L"--") + _Options[i].Key + L"=";
+			bool isStartWith = keyPrefix.compare(0, keyPrefix.length(), arg, 0, keyPrefix.length()) == 0;
+			if (isStartWith)
+			{
+				std::wcout << L" --" << _Options[i].Key << L"=" << std::wstring(arg.data() + keyPrefix.length());
+				_Options[i].FuncPtr(arg.data() + keyPrefix.length());
+				isArgumentVisited[&_Options[i]] = true;
+				isVisited = true;
+				break;
+			}
+			else
+			{
+				std::wstring loArg = arg;
+				std::transform(loArg.begin(), loArg.end(), loArg.begin(), [](unsigned char c) { return std::tolower(c); });
+				std::wstring loAliasKeyPrefix = std::wstring(L"-") + _Options[i].AliasKey + L"=";
+				std::transform(loAliasKeyPrefix.begin(), loAliasKeyPrefix.end(), loAliasKeyPrefix.begin(), [](unsigned char c) { return std::tolower(c); });
+				isStartWith = loAliasKeyPrefix.compare(0, loAliasKeyPrefix.length(), loArg, 0, loAliasKeyPrefix.length()) == 0;
+				if (isStartWith)
+				{
+					std::wcout << L" -" << _Options[i].AliasKey << L"=" << std::wstring(arg.data() + loAliasKeyPrefix.length());
+					_Options[i].FuncPtr(arg.data() + loAliasKeyPrefix.length());
+					isArgumentVisited[&_Options[i]] = true;
+					isVisited = true;
+					break;
+				}
+			}
+		}
+	}
+
+	if (isDefaultTargetVisited == false)
+	{
+		_DefaultTarget.FuncPtr(_DefaultTarget.DefaultValue);
+		if (isVisited)
+		{
+			std::cout << " ";
+		}
+		std::wcout << std::wstring(_DefaultTarget.DefaultValue);
+	}
+
+	for (size_t i = 0; i < _OptionCount; ++i)
+	{
+		if (isArgumentVisited[&_Options[i]] == false)
+		{
+			std::wcout << L" --" << _Options[i].Key << L"(" << _Options[i].AliasKey << L")=" << std::wstring(_Options[i].DefaultValue);
+			_Options[i].FuncPtr(_Options[i].DefaultValue);
+		}
+	}
+	std::wcout << std::endl;
 }
