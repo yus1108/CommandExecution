@@ -234,6 +234,7 @@ COMMAND_EXECUTION_API void CE_HandleCommandArgsW(const int _Argc, const wchar_t*
 	std::wcout << std::endl;
 }
 
+#if defined(_WIN32)
 #include <sstream>
 static std::vector<std::wstring> SplitByWhitespace(const std::wstring& s)
 {
@@ -301,7 +302,7 @@ COMMAND_EXECUTION_API void CE_HandleWinAPICmdLine(const wchar_t* _CommandLine, C
 				bool isStartWith = keyPrefix.compare(0, keyPrefix.length(), arg, 0, keyPrefix.length()) == 0;
 				if (isStartWith)
 				{
-					std::wcout << L" --" << _Options[i].Key << L"=" << std::wstring(arg.data() + keyPrefix.length());
+					std::wcout << L" --" << _Options[i].Key << L"=" << (arg.data() + keyPrefix.length());
 					_Options[i].FuncPtr(arg.data() + keyPrefix.length());
 					isArgumentVisited[&_Options[i]] = true;
 					isVisited = true;
@@ -316,7 +317,7 @@ COMMAND_EXECUTION_API void CE_HandleWinAPICmdLine(const wchar_t* _CommandLine, C
 					isStartWith = loAliasKeyPrefix.compare(0, loAliasKeyPrefix.length(), loArg, 0, loAliasKeyPrefix.length()) == 0;
 					if (isStartWith)
 					{
-						std::wcout << L" -" << _Options[i].AliasKey << L"=" << std::wstring(arg.data() + loAliasKeyPrefix.length());
+						std::wcout << L" -" << _Options[i].AliasKey << L"=" << (arg.data() + loAliasKeyPrefix.length());
 						_Options[i].FuncPtr(arg.data() + loAliasKeyPrefix.length());
 						isArgumentVisited[&_Options[i]] = true;
 						isVisited = true;
@@ -341,9 +342,10 @@ COMMAND_EXECUTION_API void CE_HandleWinAPICmdLine(const wchar_t* _CommandLine, C
 	{
 		if (isArgumentVisited[&_Options[i]] == false)
 		{
-			std::wcout << L" --" << _Options[i].Key << L"(" << _Options[i].AliasKey << L")=" << std::wstring(_Options[i].DefaultValue);
+			std::wcout << L" --" << _Options[i].Key << L"(" << _Options[i].AliasKey << L")=" << _Options[i].DefaultValue;
 			_Options[i].FuncPtr(_Options[i].DefaultValue);
 		}
 	}
 	std::wcout << std::endl;
 }
+#endif
