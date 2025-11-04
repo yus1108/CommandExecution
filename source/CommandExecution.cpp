@@ -140,7 +140,7 @@ void CE_HandleCommandArgsA(const int _Argc, const char* const _Argv[], CEKeyless
 			{
 				std::cout << " ";
 			}
-			std::cout << std::string(_DefaultTarget.DefaultValue);
+			std::cout << std::string(_DefaultTarget.DefaultValue == nullptr ? "" : _DefaultTarget.DefaultValue);
 		}
 	}
 
@@ -148,14 +148,14 @@ void CE_HandleCommandArgsA(const int _Argc, const char* const _Argv[], CEKeyless
 	{
 		if (isArgumentVisited[&_Options[i]] == false)
 		{
-			if (sData.IsPrintCommandLine) { std::cout << " --" << _Options[i].Key << "(" << _Options[i].AliasKey << ")=" << std::string(_Options[i].DefaultValue); }
+			if (sData.IsPrintCommandLine) { std::cout << " --" << _Options[i].Key << "(" << _Options[i].AliasKey << ")=" << std::string(_Options[i].DefaultValue == nullptr ? "" : _Options[i].DefaultValue); }
 			_Options[i].FuncPtr(_Options[i].DefaultValue);
 		}
 	}
 	if (sData.IsPrintCommandLine) { std::cout << std::endl; }
 }
 
-COMMAND_EXECUTION_API void CE_HandleCommandArgsW(const int _Argc, const wchar_t* const _Argv[], CEKeylessOptionW _DefaultTarget, CECommandOptionW* _Options, const size_t _OptionCount)
+COMMAND_EXECUTION_API void CE_HandleCommandArgsW(const int _Argc, const CEWChar* const _Argv[], CEKeylessOptionW _DefaultTarget, CECommandOptionW* _Options, const size_t _OptionCount)
 {
 	bool isDefaultTargetVisited = false;
 	bool isVisited = false;
@@ -166,7 +166,7 @@ COMMAND_EXECUTION_API void CE_HandleCommandArgsW(const int _Argc, const wchar_t*
 	{
 		for (int i = 1; i < _Argc; ++i)
 		{
-			int len = static_cast<int>(wcslen(_Argv[i]));
+			int len = static_cast<int>(wcslen(reinterpret_cast<const wchar_t*>(_Argv[i])));
 			switch (len)
 			{
 			case 3: __fallthrough;
@@ -175,7 +175,7 @@ COMMAND_EXECUTION_API void CE_HandleCommandArgsW(const int _Argc, const wchar_t*
 				if (sData.IsPrintCommandLine)
 				{
 					if (isVisited) { std::cout << " "; }
-					std::wcout << std::wstring(_Argv[i]);
+					std::wcout << std::wstring(reinterpret_cast<const wchar_t*>(_Argv[i]));
 				}
 				_DefaultTarget.FuncPtr(_Argv[i]);
 				isDefaultTargetVisited = true;
@@ -200,7 +200,7 @@ COMMAND_EXECUTION_API void CE_HandleCommandArgsW(const int _Argc, const wchar_t*
 						if (sData.IsPrintCommandLine)
 						{
 							if (isVisited) { std::cout << " "; }
-							std::wcout << std::wstring(_Argv[i]);
+							std::wcout << std::wstring(reinterpret_cast<const wchar_t*>(_Argv[i]));
 						}
 						_DefaultTarget.FuncPtr(_Argv[i]);
 						isDefaultTargetVisited = true;
@@ -213,11 +213,11 @@ COMMAND_EXECUTION_API void CE_HandleCommandArgsW(const int _Argc, const wchar_t*
 
 			for (size_t j = 0; j < _OptionCount; ++j)
 			{
-				std::wstring keyPrefix = std::wstring(L"--") + _Options[j].Key + L"=";
-				bool isStartWith = keyPrefix.compare(0, keyPrefix.length(), _Argv[i], 0, keyPrefix.length()) == 0;
+				std::wstring keyPrefix = std::wstring(L"--") + reinterpret_cast<const wchar_t*>(_Options[j].Key) + L"=";
+				bool isStartWith = keyPrefix.compare(0, keyPrefix.length(), reinterpret_cast<const wchar_t*>(_Argv[i]), 0, keyPrefix.length()) == 0;
 				if (isStartWith)
 				{
-					if (sData.IsPrintCommandLine) { std::wcout << L" --" << _Options[j].Key << L"=" << std::wstring(_Argv[i] + keyPrefix.length()); }
+					if (sData.IsPrintCommandLine) { std::wcout << L" --" << reinterpret_cast<const wchar_t*>(_Options[i].Key) << L"=" << std::wstring(reinterpret_cast<const wchar_t*>(_Argv[i]) + keyPrefix.length()); }
 					_Options[j].FuncPtr(_Argv[i] + keyPrefix.length());
 					isArgumentVisited[&_Options[j]] = true;
 					isVisited = true;
@@ -225,14 +225,14 @@ COMMAND_EXECUTION_API void CE_HandleCommandArgsW(const int _Argc, const wchar_t*
 				}
 				else
 				{
-					std::wstring loArg = _Argv[i];
+					std::wstring loArg = reinterpret_cast<const wchar_t*>(_Argv[i]);
 					std::transform(loArg.begin(), loArg.end(), loArg.begin(), [](unsigned char c) { return std::tolower(c); });
-					std::wstring loAliasKeyPrefix = std::wstring(L"-") + _Options[j].AliasKey + L"=";
+					std::wstring loAliasKeyPrefix = std::wstring(L"-") + reinterpret_cast<const wchar_t*>(_Options[j].AliasKey) + L"=";
 					std::transform(loAliasKeyPrefix.begin(), loAliasKeyPrefix.end(), loAliasKeyPrefix.begin(), [](unsigned char c) { return std::tolower(c); });
 					isStartWith = loAliasKeyPrefix.compare(0, loAliasKeyPrefix.length(), loArg, 0, loAliasKeyPrefix.length()) == 0;
 					if (isStartWith)
 					{
-						if (sData.IsPrintCommandLine) { std::wcout << L" -" << _Options[j].AliasKey << L"=" << std::wstring(_Argv[i] + loAliasKeyPrefix.length()); }
+						if (sData.IsPrintCommandLine) { std::wcout << L" -" << reinterpret_cast<const wchar_t*>(_Options[j].AliasKey) << L"=" << std::wstring(reinterpret_cast<const wchar_t*>(_Argv[i]) + loAliasKeyPrefix.length()); }
 						_Options[j].FuncPtr(_Argv[i] + loAliasKeyPrefix.length());
 						isArgumentVisited[&_Options[j]] = true;
 						isVisited = true;
@@ -252,7 +252,7 @@ COMMAND_EXECUTION_API void CE_HandleCommandArgsW(const int _Argc, const wchar_t*
 			{
 				std::cout << " ";
 			}
-			std::wcout << std::wstring(_DefaultTarget.DefaultValue);
+			std::wcout << std::wstring(_DefaultTarget.DefaultValue == nullptr ? L"" : reinterpret_cast<const wchar_t*>(_DefaultTarget.DefaultValue));
 		}
 	}
 
@@ -260,7 +260,7 @@ COMMAND_EXECUTION_API void CE_HandleCommandArgsW(const int _Argc, const wchar_t*
 	{
 		if (isArgumentVisited[&_Options[i]] == false)
 		{
-			if (sData.IsPrintCommandLine) { std::wcout << L" --" << _Options[i].Key << L"(" << _Options[i].AliasKey << L")=" << std::wstring(_Options[i].DefaultValue); }
+			if (sData.IsPrintCommandLine) { std::wcout << L" --" << reinterpret_cast<const wchar_t*>(_Options[i].Key) << L"(" << reinterpret_cast<const wchar_t*>(_Options[i].AliasKey) << L")=" << (_Options[i].DefaultValue == nullptr ? L"" : reinterpret_cast<const wchar_t*>(_Options[i].DefaultValue)); }
 			_Options[i].FuncPtr(_Options[i].DefaultValue);
 		}
 	}
@@ -278,16 +278,16 @@ static std::vector<std::wstring> SplitByWhitespace(const std::wstring& s)
 	return out;
 }
 
-COMMAND_EXECUTION_API void CE_HandleWinAPICmdLine(const wchar_t* _CommandLine, CEKeylessOptionW _DefaultTarget, CECommandOptionW* _Options, const size_t _OptionCount)
+COMMAND_EXECUTION_API void CE_HandleWinAPICmdLine(const CEWChar* _CommandLine, CEKeylessOptionW _DefaultTarget, CECommandOptionW* _Options, const size_t _OptionCount)
 {
 	bool isDefaultTargetVisited = false;
 	bool isVisited = false;
 	std::unordered_map<CECommandOptionW*, bool> isArgumentVisited;
 	isArgumentVisited.reserve(_OptionCount);
 
-	if (_CommandLine != nullptr && lstrcmpW(_CommandLine, L"") != 0)
+	if (_CommandLine != nullptr && lstrcmpW(reinterpret_cast<const wchar_t*>(_CommandLine), L"") != 0)
 	{
-		std::vector<std::wstring> args = SplitByWhitespace(std::wstring(_CommandLine));
+		std::vector<std::wstring> args = SplitByWhitespace(std::wstring(reinterpret_cast<const wchar_t*>(_CommandLine)));
 		for (auto arg : args)
 		{
 			size_t len = arg.size();
@@ -301,7 +301,7 @@ COMMAND_EXECUTION_API void CE_HandleWinAPICmdLine(const wchar_t* _CommandLine, C
 					if (isVisited) { std::cout << " "; }
 					std::wcout << arg;
 				}
-				_DefaultTarget.FuncPtr(arg.data());
+				_DefaultTarget.FuncPtr(reinterpret_cast<const CEWChar*>(arg.data()));
 				isDefaultTargetVisited = true;
 				isVisited = true;
 				continue;
@@ -326,7 +326,7 @@ COMMAND_EXECUTION_API void CE_HandleWinAPICmdLine(const wchar_t* _CommandLine, C
 							if (isVisited) { std::cout << " "; }
 							std::wcout << arg;
 						}
-						_DefaultTarget.FuncPtr(arg.data());
+						_DefaultTarget.FuncPtr(reinterpret_cast<const CEWChar*>(arg.data()));
 						isDefaultTargetVisited = true;
 						isVisited = true;
 						continue;
@@ -337,12 +337,12 @@ COMMAND_EXECUTION_API void CE_HandleWinAPICmdLine(const wchar_t* _CommandLine, C
 
 			for (size_t i = 0; i < _OptionCount; ++i)
 			{
-				std::wstring keyPrefix = std::wstring(L"--") + _Options[i].Key + L"=";
+				std::wstring keyPrefix = std::wstring(L"--") + reinterpret_cast<const wchar_t*>(_Options[i].Key) + L"=";
 				bool isStartWith = keyPrefix.compare(0, keyPrefix.length(), arg, 0, keyPrefix.length()) == 0;
 				if (isStartWith)
 				{
-					if (sData.IsPrintCommandLine) { std::wcout << L" --" << _Options[i].Key << L"=" << (arg.data() + keyPrefix.length()); }
-					_Options[i].FuncPtr(arg.data() + keyPrefix.length());
+					if (sData.IsPrintCommandLine) { std::wcout << L" --" << reinterpret_cast<const wchar_t*>(_Options[i].Key) << L"=" << (arg.data() + keyPrefix.length()); }
+					_Options[i].FuncPtr(reinterpret_cast<const CEWChar*>(arg.data()) + keyPrefix.length());
 					isArgumentVisited[&_Options[i]] = true;
 					isVisited = true;
 					break;
@@ -351,13 +351,13 @@ COMMAND_EXECUTION_API void CE_HandleWinAPICmdLine(const wchar_t* _CommandLine, C
 				{
 					std::wstring loArg = arg;
 					std::transform(loArg.begin(), loArg.end(), loArg.begin(), [](unsigned char c) { return std::tolower(c); });
-					std::wstring loAliasKeyPrefix = std::wstring(L"-") + _Options[i].AliasKey + L"=";
+					std::wstring loAliasKeyPrefix = std::wstring(L"-") + reinterpret_cast<const wchar_t*>(_Options[i].AliasKey) + L"=";
 					std::transform(loAliasKeyPrefix.begin(), loAliasKeyPrefix.end(), loAliasKeyPrefix.begin(), [](unsigned char c) { return std::tolower(c); });
 					isStartWith = loAliasKeyPrefix.compare(0, loAliasKeyPrefix.length(), loArg, 0, loAliasKeyPrefix.length()) == 0;
 					if (isStartWith)
 					{
-						if (sData.IsPrintCommandLine) { std::wcout << L" -" << _Options[i].AliasKey << L"=" << (arg.data() + loAliasKeyPrefix.length()); }
-						_Options[i].FuncPtr(arg.data() + loAliasKeyPrefix.length());
+						if (sData.IsPrintCommandLine) { std::wcout << L" -" << reinterpret_cast<const wchar_t*>(_Options[i].AliasKey) << L"=" << (arg.data() + loAliasKeyPrefix.length()); }
+						_Options[i].FuncPtr(reinterpret_cast<const CEWChar*>(arg.data()) + loAliasKeyPrefix.length());
 						isArgumentVisited[&_Options[i]] = true;
 						isVisited = true;
 						break;
@@ -376,7 +376,7 @@ COMMAND_EXECUTION_API void CE_HandleWinAPICmdLine(const wchar_t* _CommandLine, C
 			{
 				std::cout << " ";
 			}
-			std::wcout << std::wstring(_DefaultTarget.DefaultValue);
+			std::wcout << std::wstring(_DefaultTarget.DefaultValue == nullptr ? L"" : reinterpret_cast<const wchar_t*>(_DefaultTarget.DefaultValue));
 		}
 	}
 
@@ -384,7 +384,7 @@ COMMAND_EXECUTION_API void CE_HandleWinAPICmdLine(const wchar_t* _CommandLine, C
 	{
 		if (isArgumentVisited[&_Options[i]] == false)
 		{
-			if (sData.IsPrintCommandLine) { std::wcout << L" --" << _Options[i].Key << L"(" << _Options[i].AliasKey << L")=" << _Options[i].DefaultValue; }
+			if (sData.IsPrintCommandLine) { std::wcout << L" --" << reinterpret_cast<const wchar_t*>(_Options[i].Key) << L"(" << reinterpret_cast<const wchar_t*>(_Options[i].AliasKey) << L")=" << (_Options[i].DefaultValue == nullptr ? L"" : reinterpret_cast<const wchar_t*>(_Options[i].DefaultValue)); }
 			_Options[i].FuncPtr(_Options[i].DefaultValue);
 		}
 	}
