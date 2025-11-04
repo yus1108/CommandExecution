@@ -7,7 +7,7 @@
 #if defined(__cplusplus)
 #if defined(EXPORT_COMMAND_EXECUTION_DLL)
 #define COMMAND_EXECUTION_API extern "C" __declspec(dllexport)
-#elif defined(EXPORT_COMMAND_EXECUTION_DLL)
+#elif defined(IMPORT_COMMAND_EXECUTION_DLL)
 #define COMMAND_EXECUTION_API extern "C" __declspec(dllimport)
 #else
 #define COMMAND_EXECUTION_API extern "C" 
@@ -15,7 +15,7 @@
 #else
 #if defined(EXPORT_COMMAND_EXECUTION_DLL)
 #define COMMAND_EXECUTION_API extern __declspec(dllexport)
-#elif defined(EXPORT_COMMAND_EXECUTION_DLL)
+#elif defined(IMPORT_COMMAND_EXECUTION_DLL)
 #define COMMAND_EXECUTION_API extern __declspec(dllimport)
 #else
 #define COMMAND_EXECUTION_API extern 
