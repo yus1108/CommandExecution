@@ -22,19 +22,19 @@
 #endif
 #endif // __cplusplus
 
-typedef struct
+typedef struct CEKeylessOptionA
 {
 	const char* DefaultValue;
 	void(*FuncPtr)(const char* _Value);
 } CEKeylessOptionA;
 
-typedef struct
+typedef struct CEKeylessOptionW
 {
 	const wchar_t* DefaultValue;
 	void(*FuncPtr)(const wchar_t* _Value);
 } CEKeylessOptionW;
 
-typedef struct
+typedef struct CECommandOptionA
 {
 	const char* Key;
 	const char* AliasKey;
@@ -42,7 +42,7 @@ typedef struct
 	void(*FuncPtr)(const char* _Value);
 } CECommandOptionA;
 
-typedef struct
+typedef struct CECommandOptionW
 {
 	const wchar_t* Key;
 	const wchar_t* AliasKey;
@@ -50,11 +50,8 @@ typedef struct
 	void(*FuncPtr)(const wchar_t* _Value);
 } CECommandOptionW;
 
-enum CEDefaultCommandOption
-{
-	CE_DEFAULT_COMMAND_OPTION_CODE_PAGE,
-	CE_DEFAULT_COMMAND_OPTION_LOCALE,
-};
+COMMAND_EXECUTION_API void CE_EnablePrintCommandLine(void);
+COMMAND_EXECUTION_API void CE_DisablePrintCommandLine(void);
 
 // _DefaultTarget WILL BE CALLED FIRST PRIOR TO _Options
 // THE ORDER MATTERS IN _Options (THIS FUNCTION WILL CALL CommandOption::FuncPtr IN ORDER OF DECLARATION in _Options)
